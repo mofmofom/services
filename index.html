@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>会社情報入力フォーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    let userId = "";
+    let username = "";
+
+    function formatDate(date) {
+      const year = date.getFullYear().toString().slice(-2); // 年の下2桁を取得
+      const month = ('0' + (date.getMonth() + 1)).slice(-2); // 月を2桁に
+      const day = ('0' + date.getDate()).slice(-2); // 日を2桁に
+      const hours = ('0' + date.getHours()).slice(-2); // 時間を2桁に
+      const minutes = ('0' + date.getMinutes()).slice(-2); // 分を2桁に
+      return `${year}/${month}/${day} ${hours}:${minutes}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      liff.init({ liffId: "2005918940-R2l0DEod" })
+        .then(() => {
+          // LIFF初期化成功時の処理
+          if (liff.isLoggedIn()) {
+            liff.getProfile()
+              .then(profile => {
+                username = profile.displayName;
+                userId = profile.userId;
+                document.getElementById('userId').value = userId; // userIdを隠しフィールドに設定
+                document.getElementById('username').value = username; // usernameを隠しフィールドに設定
+              })
+              .catch(err => {
+                console.error('Error getting profile', err);
+              });
+          } else {
+            liff.login();
+          }
+        })
+        .catch((err) => {
+          console.error('LIFF Initialization failed', err);
+        });
+    });
+
+    function submitForm() {
+      const email = document.getElementById('email').value;
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneNumber = document.getElementById('phoneNumber').value;
+      const phonePattern = /^(\d{3}-\d{4}-\d{4}|\d{3}-\d{3}-\d{4})$/;
+
+      if (!emailPattern.test(email)) {
+        alert("正しいメールアドレスを入力してください");
+        return;
+      }
+
+      if (!phonePattern.test(phoneNumber)) {
+        alert("電話番号はハイフン付きでご入力ください");
+        return;
+      }
+
+      const data = {
+        name: document.getElementById('name').value,
+        nameFurigana: document.getElementById('nameFurigana').value,
+        phoneNumber: document.getElementById('phoneNumber').value,
+        email: document.getElementById('email').value,
+        companyInfo1: document.getElementById('companyInfo1').value,
+        companyInfo2: document.getElementById('companyInfo2').value,
+        companyInfo3: document.getElementById('companyInfo3').value,
+        companyInfo4: document.getElementById('companyInfo4').value,
+        companyInfo5: document.getElementById('companyInfo5').value,
+        timestamp: formatDate(new Date()),
+        userId: document.getElementById('userId').value,
+        username: document.getElementById('username').value
+      };
+
+      const submitButton = document.querySelector('button[type="submit"]');
+      submitButton.innerText = '送信中...';
+      submitButton.disabled = true; // 送信ボタンを無効化
+
+      fetch('https://script.google.com/macros/s/AKfycbwl2OVHMQ0EMecFY8tu1Focn8dMUMx70d1o7DoLS2g_aID_cNFtgabSCQVwKwBU-YmH/exec', {
+        method: 'POST',
+        body: new URLSearchParams(data),
+        mode: 'cors'
+      })
+      .then(response => response.json())
+      .then(result => {
+        document.getElementById('message').innerText = '次にお進みください。';
+        submitButton.innerText = '送信完了！';
+        submitButton.disabled = true; // 送信ボタンを再度無効化
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('message').innerText = '送信中にエラーが発生しました。もう一度お試しください。';
+        submitButton.innerText = '送信';
+        submitButton.disabled = false; // エラー時に送信ボタンを再度有効化
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    ::placeholder {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      color: #999;
+    }
+    .required-label::after {
+      content: " *";
+      color: red;
+    }
+    input:invalid {
+      border: 2px solid lightcoral;
+    }
+    input:valid {
+      border: 2px solid green;
+    }
+  </style>
+</head>
+<body>
+  <form onsubmit="event.preventDefault(); submitForm();">
+    <div class="container">
+      <label for="name" class="required-label">お名前</label>
+      <p>フルネームでご記入ください</p>
+      <input type="text" id="name" name="name" required placeholder="山田太郎"><br>
+      
+      <label for="nameFurigana" class="required-label">お名前（ふりがな）</label>
+      <p>ひらがな・フルネームでご記入ください</p>
+      <input type="text" id="nameFurigana" name="nameFurigana" required placeholder="やまだたろう"><br>
+      
+      <label for="phoneNumber" class="required-label">電話番号</label>
+      <p>ハイフンをつけてご入力ください</p>
+      <input type="text" id="phoneNumber" name="phoneNumber" required placeholder="090-1234-5678" pattern="\d{3}-\d{4}-\d{4}|\d{3}-\d{3}-\d{4}"><br>
+      
+      <label for="email" class="required-label">メールアドレス</label>
+      <p>有効なメールアドレスをご入力ください</p>
+      <input type="text" id="email" name="email" required placeholder="xxx@example.com" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"><br>
+      
+      <label for="companyInfo1" class="required-label">会社情報１</label>
+      <p>応募をご希望の会社名、求人ID、求人タイトル、想定勤務地をご記入ください<br>※会社名はスキップ可</p>
+      <textarea id="companyInfo1" name="companyInfo1" required placeholder="会社名：&#13;&#10;求人ID：&#13;&#10;求人タイトル：&#13;&#10;想定勤務地："></textarea><br>
+      
+      <label for="companyInfo2">会社情報２</label>
+      <p>応募をご希望の会社名、求人ID、求人タイトル、想定勤務地をご記入ください<br>※会社名はスキップ可</p>
+      <textarea id="companyInfo2" name="companyInfo2" placeholder="会社名：&#13;&#10;求人ID：&#13;&#10;求人タイトル：&#13;&#10;想定勤務地："></textarea><br>
+      
+      <label for="companyInfo3">会社情報３</label>
+      <p>応募をご希望の会社名、求人ID、求人タイトル、想定勤務地をご記入ください<br>※会社名はスキップ可</p>
+      <textarea id="companyInfo3" name="companyInfo3" placeholder="会社名：&#13;&#10;求人ID：&#13;&#10;求人タイトル：&#13;&#10;想定勤務地："></textarea><br>
+      
+      <label for="companyInfo4">会社情報４</label>
+      <p>応募をご希望の会社名、求人ID、求人タイトル、想定勤務地をご記入ください<br>※会社名はスキップ可</p>
+      <textarea id="companyInfo4" name="companyInfo4" placeholder="会社名：&#13;&#10;求人ID：&#13;&#10;求人タイトル：&#13;&#10;想定勤務地："></textarea><br>
+      
+      <label for="companyInfo5">会社情報５</label>
+      <p>応募をご希望の会社名、求人ID、求人タイトル、想定勤務地をご記入ください<br>※会社名はスキップ可</p>
+      <textarea id="companyInfo5" name="companyInfo5" placeholder="会社名：&#13;&#10;求人ID：&#13;&#10;求人タイトル：&#13;&#10;想定勤務地："></textarea><br>
+      
+      <input type="hidden" id="userId" name="userId"> <!-- 隠しフィールド -->
+      <input type="hidden" id="username" name="username"> <!-- 隠しフィールド -->
+    </div>
+    <button type="submit">送信</button>
+  </form>
+  <p id="message"></p>
+</body>
+</html>
